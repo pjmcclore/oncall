@@ -7,7 +7,7 @@
     </div>
     <div class="span10">
         <form class="form-horizontal well" method="post">
-            <input type="hidden" name="formfields" value="username,password,name,company">
+            <input type="hidden" name="formfields" value="username,password,name,phone,jabber,prowl">
             <fieldset>
                 <legend>Profile</legend>
                 <div class="control-group">
@@ -29,9 +29,21 @@
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label" for="company">Company</label>
+                    <label class="control-label" for="phone">Phone</label>
                     <div class="controls">
-                        <input class="large" id="company" name="company" size="30" type="text" value="<%= $user->{company} %>"/>
+                        <input type="text" class="span4" id="phone" name="phone" value="<%= $user->{phone} %>">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="jabber">Jabber</label>
+                    <div class="controls">
+                        <input type="text" class="span4" id="jabber" name="jabber" value="<%= $user->{jabber} %>">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="prowl">Prowl</label>
+                    <div class="controls">
+                        <input type="text" class="span4" id="prowl" name="prowl" value="<%= $user->{prowl} %>">
                     </div>
                 </div>
                 <div class="form-actions">

@@ -9,10 +9,10 @@ sub register {
 
     $app->helper(
         notify_hipchat => sub {
-            my ($self, $msg, $severity) = @_;
+            my ($self, $msg) = @_;
 
             my $color;
-            given ($severity) {
+            given ($msg->{prio}) {
                 when (2) { $color = 'yellow'; }
                 when (3) { $color = 'red'; }
                 default  { $color = 'green'; }
@@ -27,7 +27,7 @@ sub register {
                     $url, {
                         room_id        => $to,
                         from           => 'On Call',
-                        message        => $msg,
+                        message        => '['.$msg->{host}.'] '.$msg->{message},
                         message_format => 'text',
                         notify         => 1,
                         color          => $color,

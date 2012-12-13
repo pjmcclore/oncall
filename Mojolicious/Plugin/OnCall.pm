@@ -59,20 +59,10 @@ sub register {
 
             my $view = {
                 view => 'notify/by_time',
-                opts => { include_docs => 'true' } };
+                opts => { include_docs => 'true', descending => 'true' } };
             $view->{opts}->{limit} = $limit if $limit;
             return $couch->get_array_view($view);
         });
-    $app->helper(
-        get_name => sub {
-            my ($self, $doc) = @_;
-
-            return unless $doc;
-            my $ret = $couch->get_doc({ id => $doc });
-            return $ret->{name} // undef;
-        },
-    );
-
     $app->helper(
         notify_eventually => sub {
             my ($self, $message) = @_;
@@ -85,7 +75,8 @@ sub register {
             foreach my $mapping (@{$mappings}) {
                 my $method = $mapping->{mapping};
                 $app->log->debug("calling " . $method);
-                $self->$method($mapping, $message);
+                $self->$method($mapping, $message)
+                    unless $self->is_downtimed($message);
             }
         },
     );
@@ -96,17 +87,65 @@ sub register {
 
             my $method = $mapping->{destination};
             $app->log->debug("calling " . $method);
-            $self->$method($message->{message});
+            $self->$method($message);
         });
+    
+    $app->helper(
+        is_downtimed => sub {
+            my ($self, $message) = @_;
+
+            my $downtimes = $couch->get_array_view({
+                    view => 'sources/downtimes',
+                    opts => { include_docs => 'true',}
+                });
+            foreach my $down (@{$downtimes}){
+                next unless exists $message->{$down->{key}};
+                my $re = $down->{match};
+                return 1 if($message->{$down->{key}} =~ m{$re});
+            }
+            return;
+        },
+    );
 
     $app->helper(
-        format_time => sub {
-            my ($self, $time) = @_;
+        get_user_list => sub {
+            my ($self) = @_;
 
-            my $dt = DateTime->from_epoch( epoch => $time );
-            return time_ago($dt);
+            return $couch->get_array_view({ view => 'site/user', opts => {include_docs => 'true'}});
+        },
+    );
+
+    $app->helper(
+        find_on_duty_guy => sub {
+            my ($self, $message) = @_;
+
+            return $self->check_timezones($message) ||
+            $self->check_on_duty_plan($message) ||
+            $self->check_escalation_level($message);
         }
     );
+
+    $app->helper(
+        check_timezones => sub {
+            my ($self, $message) = @_;
+            return;
+        },
+    );
+    $app->helper(
+        check_on_duty_plan => sub {
+            my ($self, $message) = @_;
+            return;
+        },
+    );
+    $app->helper(
+        check_escalation_level => sub {
+            my ($self, $message) = @_;
+            # FIXME - needs a real lookup
+            # fake code to only notify me - only for testing in the moment
+            return $couch->get_doc({id => 'da860dcc8ab87f28a50282bbe8000ad8'});
+        }
+    );
+
 }
 
 1;

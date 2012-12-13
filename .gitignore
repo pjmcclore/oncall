@@ -10,3 +10,4 @@ MANIFEST*
 !MANIFEST.SKIP
 pm_to_blib
 node_modules/
+etc/oncall.conf
