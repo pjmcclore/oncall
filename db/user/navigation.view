@@ -11,8 +11,9 @@
 })
 
 
+
 [params]
 name = navigation
 language = javascript
 _id = _design/user
-_rev = 1-e39ad7ac2743336e70a0342444384c7c
+_rev = 1-7dd6e57d5f68b0bcbb8e31bc8121fcc2

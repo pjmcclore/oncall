@@ -69,6 +69,7 @@
                     % }
                     <div class="nav-collapse">
                         <ul class="nav">
+                            <li><a href="/sources">notification sources</a></li>
                         % foreach my $item (nav) {
                             <li<%== active_menu($item) %>><a href="/<%= $item %>"><%= ucfirst($item) %></a></li>
                         % }

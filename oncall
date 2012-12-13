@@ -1,8 +1,10 @@
 #!/usr/bin/env perl
 use Mojolicious::Lite;
+use Mojo::JSON;
+use Data::Dumper;
 
 my $config = plugin Config => {
-    file      => 'etc/planet-express-ship.conf',
+    file      => 'etc/oncall.conf',
     stash_key => 'conf'
 };
 
@@ -10,15 +12,9 @@ plugin 'CouchUser', $config->{couch};
 plugin 'CouchAuth', $config->{couch};
 plugin 'MicroPage', $config->{couch};
 plugin 'FormValidate';
-plugin 'Mail', $config->{mail};
-plugin 'Uploader';
-plugin 'CloudFiles';
-
-# replace 'CouchAuth' with this to have facebook auth:
-#plugin 'FacebookAuth', $config->{facebook};
-
-# for an invite only based platform use this:
-#plugin 'InviteCodes',  $config->{couch};
+plugin 'Mail',   $config->{mail};
+plugin 'OnCall', $config->{couch};
+plugin 'Notify::HipChat', $config->{hipchat};
 
 get '/' => sub {
     my $self = shift;
@@ -93,7 +89,9 @@ post '/reset_password' => sub {
                 . $self->{config}->{site}->{url}
                 . "/reset_password/"
                 . $reply->{id}
-                . "\n\nCheers!\nYour '".$self->{config}->{site}->{name}."' team.\n",
+                . "\n\nCheers!\nYour '"
+                . $self->{config}->{site}->{name}
+                . "' team.\n",
         );
         $self->flash(message => "Your reset password request was sent to: "
                 . $reply->{user}->{username});
@@ -129,34 +127,24 @@ get '/auth' => sub {
     }
 };
 
-# TODO: currently based on fb_uid in session, should be a generic provider uid
-any '/invite/:code' => sub {
-    my $self = shift;
+# accept notifications
+post '/add/:id' => sub {
+    my ($self) = @_;
 
-    unless ($self->param('code')) {
-        $self->flash(error => "invite code missing");
-        $self->redirect_to('/');
+    unless($self->is_valid_source($self->param('id'))){
+        $self->render_json({error => 'Not a valid notification source'});
+        return;
     }
-
-    $self->check_invite($self->param('code'))
-        unless (exists $self->session->{invite_code});
-
-    if (exists $self->session->{invite_code}) {
-        if ($self->session->{fb_uid}) {
-
-            # create_user() has to be implemented by the *Auth plugin
-            $self->create_user();
-            if ($self->use_invite()) {
-                $self->redirect_to('/dashboard');
-            }
-        }
-        else {
-            $self->auth();
-        }
+    my $json = Mojo::JSON->new();
+    app->log->debug(Dumper($self->req->params->to_hash));
+    my $doc = $json->decode($self->param('payload'));
+    if($doc){
+        $doc->{source} = $self->param('id');
+        my $id = $self->add_notify($doc);
+        $self->notify_eventually($doc);
+        $self->render_json({success => $id});
     }
-
-    $self->flash(error => 'invalid or already used invite code');
-    $self->redirect_to('/');
+    $self->render_json({error => 'Did not receive valid JSON'});
 };
 
 # Authenticated user section
@@ -187,6 +175,8 @@ group {
     # user dashboard
     get '/dashboard' => sub {
         my $self = shift;
+
+        $self->stash(notifies => $self->get_notifies(10) || []);
     };
 
     get '/profile' => sub {
@@ -207,32 +197,19 @@ group {
         $self->redirect_to('/dashboard');
     };
 
-    get '/invite' => sub {
+    get '/sources' => sub {
         my $self = shift;
 
-        my $code = $self->create_invite();
-
-        if ($self->stash('format') eq 'json') {
-            $self->render(json => { code => $code });
-        }
-        else {
-            $self->stash(code => $code);
-        }
+        $self->stash(sources => $self->get_notify_sources() || {});
     };
 
-    ## image handling
-    post '/upload/:id' => sub {
-        my $self = shift;
+    post '/sources' => sub {
+        my ($self) = shift;
 
-        my $upload =
-            $self->upload_file($self->param('file'), $self->param('id'));
-
-        unless (exists $upload->{error}) {
-            # do something with the $upload->{url} parameter like saving it somewhere
-        }
-    
-        $self->render_json($upload);
-    };  
+        my $params = $self->process_form() || return;
+        $self->create_notify_source($params);
+        $self->redirect_to('/sources');
+    };
 
 };
 

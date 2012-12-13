@@ -1,0 +1,15 @@
+[map]
+(function(doc) {
+  if (doc.type == 'source') {
+    emit(doc._id, 1);
+  }
+})
+
+
+
+
+[params]
+name = all
+language = javascript
+_id = _design/sources
+_rev = 1-3a2cd5a958154623a168c08f0a8a85b6

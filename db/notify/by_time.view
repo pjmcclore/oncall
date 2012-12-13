@@ -1,0 +1,15 @@
+[map]
+(function(doc) {
+  if (doc.type == 'notification') {
+    emit(doc.recv_at, 1);
+  }
+})
+
+
+
+
+[params]
+name = by_time
+language = javascript
+_id = _design/notify
+_rev = 2-c3517262bd204f03365141e4f34e659f

@@ -10,8 +10,9 @@
 
 
 
+
 [params]
 name = valid
 language = javascript
 _id = _design/invites
-_rev = 1-203c5c0128275e9021ed6d1e73f8dd1f
+_rev = 1-703f5b7bf82218c1e783962112384254
