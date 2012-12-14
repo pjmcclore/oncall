@@ -7,9 +7,7 @@
     </div>
     <div class="span6">
         <% foreach my $notify (@{$notifies}) { %>
-        <p class="text-info">
-        <%= $notify->{message} %>
-        </p>
+        <pre><%= $notify->{message} %></pre>
         <span class="label label-info"><%= $notify->{host} %>: <%= get_name($notify->{source}) %></span>
         <small><%= format_time($notify->{recv_at}) %></small>
         <hr>

@@ -20,16 +20,21 @@ sub register {
             }
             my $on_duty = $self->find_on_duty_guy($msg);
             $app->log->debug("notify via Prowl");
-            my $ua = LWP::UserAgent->new();
+            my $ua  = LWP::UserAgent->new();
             my $url = 'https://prowl.weks.net/publicapi/';
 
+            my $p_msg = uri_escape($msg->{message});
+            if (length $p_msg > 10000) {
+                $p_msg = substr($p_msg, 0, 10000);
+            }
+
             my @req;
-            push( @req, 'apikey=' . $on_duty->{prowl} );
-            push( @req, 'description=' . uri_escape( $msg->{message} ) );
-            push( @req, 'event=alert' );
-            push( @req, 'priority=' . $prio );
-            push( @req, 'application=On%20Call:[' . $msg->{host} .']' );
-            $url .= 'add?' . join( '&', @req );
+            push(@req, 'apikey=' . $on_duty->{prowl});
+            push(@req, 'description=' . $p_msg);
+            push(@req, 'event=alert');
+            push(@req, 'priority=' . $prio);
+            push(@req, 'application=On%20Call:[' . $msg->{host} . ']');
+            $url .= 'add?' . join('&', @req);
             $app->log->debug("Prowl URL: $url");
 
             my $res = $ua->get($url);

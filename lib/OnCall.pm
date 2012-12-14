@@ -7,8 +7,8 @@ use HTTP::Request::Common;
 use Data::Dumper;
 
 has 'token' => (
-    is   => 'rw',
-    isa  => 'Str',
+    is  => 'rw',
+    isa => 'Str',
 );
 
 has 'url' => (
@@ -20,14 +20,13 @@ has 'url' => (
 has 'host' => (
     is      => 'rw',
     isa     => 'Str',
-    default => sub { my $host = qx{hostname}; chomp($host); return $host});
+    default => sub { my $host = qx{hostname}; chomp($host); return $host });
 
 has 'debug' => (
-    is => 'rw',
-    isa => 'Bool',
+    is      => 'rw',
+    isa     => 'Bool',
     default => 0,
 );
-
 
 =head2 tell
 
@@ -54,12 +53,10 @@ sub tell {
     my $res = $ua->post(
         $self->url . $self->token,
         Content_Type => 'form-data',
-        Content      => { payload => to_json($message) })
-        unless $self->debug;
+        Content      => { payload => to_json($message) });
     print Dumper($message, $self->url, $self->token)
-        if $self->debug;;
+        if $self->debug;
     return $res->is_success;
-
 }
 
 __PACKAGE__->meta->make_immutable();
