@@ -1,0 +1,47 @@
+#!/usr/bin/env perl
+
+use 5.010;
+use lib 'lib';
+use AnyEvent;
+use JSON;
+use ZMQ::LibZMQ3;
+use ZMQ::Constants qw(ZMQ_SUB ZMQ_SUBSCRIBE ZMQ_RCVMORE ZMQ_FD);
+use Data::Dumper;
+use OnCall::Notify;
+
+my $context = zmq_init();
+my $subscriber = zmq_socket($context, ZMQ_SUB);
+zmq_connect($subscriber, 'tcp://localhost:5556');
+zmq_setsockopt($subscriber, ZMQ_SUBSCRIBE, 'json ');
+
+my $incident_id = 1;
+my $cv = AnyEvent->condvar;
+my $fh = zmq_getsockopt($subscriber, ZMQ_FD);
+my $notify = OnCall::Notify->new(condvar => $cv);
+
+my $w = AnyEvent->io(
+    fh   => $fh,
+    poll => "r",
+    cb   => sub {
+        while (my $recvmsg = zmq_recvmsg($subscriber, ZMQ_RCVMORE)) {
+            my $msg = zmq_msg_data($recvmsg);
+            $msg =~ s/^json //;
+            my $json = from_json($msg);
+            if($json) {
+                _analyze_msg($json);
+            } else {
+                warn "Could not parse message!";
+            }
+        }
+    });
+
+$cv->recv;
+
+sub _analyze_msg {
+    my $msg = shift;
+
+    $msg->{id} = $incident_id;
+    say $msg;
+    $notify->notify($msg);
+    $incident_id ++;
+}
