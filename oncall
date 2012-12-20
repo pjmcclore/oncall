@@ -17,6 +17,7 @@ plugin 'Mail',   $config->{mail};
 plugin 'OnCall', $config->{couch};
 plugin 'Notify::HipChat', $config->{hipchat};
 plugin 'Notify::Prowl', $config->{prowl};
+plugin 'Zmq';
 
 get '/' => sub {
     my $self = shift;

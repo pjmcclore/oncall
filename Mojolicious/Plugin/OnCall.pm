@@ -75,8 +75,9 @@ sub register {
             foreach my $mapping (@{$mappings}) {
                 my $method = $mapping->{mapping};
                 $app->log->debug("calling " . $method);
-                $self->$method($mapping, $message)
-                    unless $self->is_downtimed($message);
+                $self->zmq_send($message);
+                #$self->$method($mapping, $message)
+                #    unless $self->is_downtimed($message);
             }
         },
     );
