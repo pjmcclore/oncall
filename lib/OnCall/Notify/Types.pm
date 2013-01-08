@@ -17,7 +17,8 @@ sub ignore_first {
     my($self, $incident) = @_;
 
     say STDERR "ignore first notify! ID: " . $incident->id;
-    return;
+    $incident->stage($incident->stage +1);
+    return $incident;
 }
 
 
@@ -30,11 +31,13 @@ Notify if the last notify is more than 5 minutes ago
 sub after_5_min {
     my ($self, $incident) = @_;
     
-    if (($incident->last_seen + 600) < time){
+    if (($incident->last_seen + 20) < time){
         say STDERR "Incident still broken! ID: " . $incident->id;
-        return 1;
+        $incident->stage($incident->stage +1);
+        $incident->update_sequence;
+        return $incident;
     }
-    return;
+    return $incident;
 }
 
 
@@ -48,7 +51,7 @@ sub notify_recovery {
     my ($self, $incident) = @_;
 
     say STDERR "Incident recovered! ID: " . $incident->id;
-    return;
+    return $incident;
 }
 
 __PACKAGE__->meta->make_immutable();

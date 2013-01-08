@@ -6,11 +6,13 @@ use Any::Moose;
 has 'debug' => (is => 'rw', isa => 'Bool', default => 0);
 has 'id' => (is => 'rw', isa => 'Str');
 has 'condvar'          => (is => 'rw', isa => 'EV::Timer');
-has 'timeout'          => (is => 'rw', isa => 'Int', default => 100);
+has 'timeout'          => (is => 'rw', isa => 'Int', default => 10);
 has 'escalation_level' => (is => 'rw', isa => 'Int', default => 0);
 has 'sequence'         => (is => 'rw', isa => 'Int', default => 0);
 has 'last_notify'      => (is => 'rw', isa => 'Int', default => 0);
 has 'last_seen'        => (is => 'rw', isa => 'Int', default => sub { time });
+has 'created'          => (is => 'rw', isa => 'Int', default => sub { time });
+has 'stage'            => (is => 'rw', isa => 'Int', default => 0);
 
 =head1 NAME
 
@@ -148,7 +150,7 @@ sub is_open {
     my ($self, $timeout) = @_;
 
     $timeout = $self->timeout unless $timeout;
-    if (($self->last_seen + $timeout) > time) {
+    if (($self->created + $timeout * 5) > time) {
         return 1;
     }
     return;

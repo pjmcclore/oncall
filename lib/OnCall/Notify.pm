@@ -53,6 +53,7 @@ is:
 sub notify {
     my ($self, $msg, $id) = @_;
 
+    say "notify was called ...";
     my $incident;
     $id = $msg->{id} unless $id;
     unless ($incident = $self->incidents->{ $id }) {
@@ -62,9 +63,11 @@ sub notify {
     }
     if ($incident->is_open) {
         my $notify = OnCall::Notify::Types->new();
-        foreach my $wf (@{$self->plan}) {
-            $notify->$wf($incident);
-        }
+        my $stage = ($self->plan->[$incident->stage] ? $incident->stage : $#{$self->plan});
+        my $wf = $self->plan->[$stage];
+        say "WF: $wf stage: ". $incident->stage;
+        $self->incidents->{$incident->id} = $notify->$wf($incident);
+        $self->condvar;
     }
     else {
         $self->recover($incident);
@@ -82,13 +85,15 @@ sub recover {
     my ($self, $incident) = @_;
     my $notify = OnCall::Notify::Types->new();
     foreach my $wf (@{$self->on_recovery}) {
-        $notify->$wf($incident);
+        $self->incidents->{$incident->id} = $notify->$wf($incident);
     }
 
     # remove the incident from internal registry, this also lets the
     # condvar go out of scope and therefor removes all events attached
     # to it.
-    delete $self->incidents->{$incident->id};
+    my $id = $incident->id;
+    undef $incident;
+    delete $self->incidents->{$id};
     return;
 }
 
@@ -106,7 +111,7 @@ sub schedule {
         interval => $incident->timeout,
         cb       => sub {
             $self->notify(undef, $incident->id);
-            $self->condvar->send;
+            $self->condvar;
         });
     $incident->condvar($w);
     $self->incidents->{$incident->id} = $incident; # store condvar
