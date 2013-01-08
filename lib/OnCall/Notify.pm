@@ -2,6 +2,8 @@ package OnCall::Notify;
 
 use 5.010;
 use Any::Moose;
+use OnCall::Incident;
+use OnCall::Notify::Types;
 
 has 'debug' => (is => 'rw', isa => 'Bool', default => 0);
 has 'incidents' => (is => 'rw', isa => 'HashRef', default => sub { {} });
@@ -59,8 +61,9 @@ sub notify {
         $self->schedule($incident); # schedule retests
     }
     if ($incident->is_open) {
-        foreach my $wf ($self->plan) {
-            $self->$wf($incident->id);
+        my $notify = OnCall::Notify::Types->new();
+        foreach my $wf (@{$self->plan}) {
+            $notify->$wf($incident);
         }
     }
     else {
@@ -77,8 +80,9 @@ Recover from an incident
 
 sub recover {
     my ($self, $incident) = @_;
-    foreach my $wf ($self->on_recovery) {
-        $self->$wf($incident->id);
+    my $notify = OnCall::Notify::Types->new();
+    foreach my $wf (@{$self->on_recovery}) {
+        $notify->$wf($incident);
     }
 
     # remove the incident from internal registry, this also lets the

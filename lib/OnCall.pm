@@ -56,7 +56,12 @@ sub tell {
         Content      => { payload => to_json($message) });
     print Dumper($message, $self->url, $self->token)
         if $self->debug;
-    return $res->is_success;
+    if($res->is_success){
+        return $res->content;
+    } else {
+        print $res->status_line ."\n" if $self->debug;
+        return;
+    }
 }
 
 __PACKAGE__->meta->make_immutable();

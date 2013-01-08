@@ -5,8 +5,8 @@ use Any::Moose;
 
 has 'debug' => (is => 'rw', isa => 'Bool', default => 0);
 has 'id' => (is => 'rw', isa => 'Str');
-has 'condvar'          => (is => 'rw', isa => 'AnyEvent::CondVar');
-has 'timeout'          => (is => 'rw', isa => 'int', defaut => 600);
+has 'condvar'          => (is => 'rw', isa => 'EV::Timer');
+has 'timeout'          => (is => 'rw', isa => 'Int', default => 100);
 has 'escalation_level' => (is => 'rw', isa => 'Int', default => 0);
 has 'sequence'         => (is => 'rw', isa => 'Int', default => 0);
 has 'last_notify'      => (is => 'rw', isa => 'Int', default => 0);
